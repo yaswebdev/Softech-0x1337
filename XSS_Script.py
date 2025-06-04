@@ -2,6 +2,10 @@ import requests
 import urllib.parse
 from time import sleep
 
+print("========================================")
+print("  Reflected XSS Scanner using Wayback Machine  ")
+print("========================================")
+
 # 🏁 Set target domain
 target = input("Enter the target domain : ")
 # 🧪 Payload for reflected XSS test
